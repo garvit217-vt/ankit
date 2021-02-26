@@ -104,17 +104,28 @@ class my_net(nn.Module):
         self.fc1 = nn.Linear(5, 7)
         self.fc2 = nn.Linear(7, 10)
         self.fc3 = nn.Linear(10, 10)
-        #self.fc4 = nn.Linear(10, 10)
-        #self.fc5 = nn.Linear(10, 10)
-        #self.fc6 = nn.Linear(10, 10)
+        self.fc4 = nn.Linear(10, 10)
+        self.fc5 = nn.Linear(10, 10)
+        self.fc6 = nn.Linear(10, 10)
         #self.fc7 = nn.Linear(10, 10)
         #self.fc8 = nn.Linear(10, 10)
-        self.fc9 = nn.Linear(10, 5)
-        self.fc10 = nn.Linear(5, 2)
+        #self.fc8 = nn.Linear(10, 10)
+        #self.fc9 = nn.Linear(10, 10)
+        #self.fc10 = nn.Linear(10, 10)
+        #self.fc11 = nn.Linear(10, 10)
+        #self.fc12 = nn.Linear(10, 10)
+        #self.fc13 = nn.Linear(10, 10)
+        #self.fc14 = nn.Linear(10, 10)
+        #self.fc15 = nn.Linear(10, 10)
+        #self.fc16 = nn.Linear(10, 10)
+        self.fcn_2 = nn.Linear(10, 7)
+        self.fcn_1 = nn.Linear(7, 5)
+        self.fcn = nn.Linear(5, 2)
 
     def forward(self, inputs):
 
-        x = self.b1(inputs)
+        #x = self.b1(inputs)
+        x = inputs
         x = self.fc1(x)
         x = F.leaky_relu(x)
 
@@ -133,17 +144,44 @@ class my_net(nn.Module):
         x = self.fc6(x)
         x = F.leaky_relu(x)
 
-        x = self.fc7(x)
+        #x = self.fc7(x)
+        #x = F.leaky_relu(x)
+
+        #x = self.fc8(x)
+        #x = F.leaky_relu(x)
+
+        #x = self.fc9(x)
+        #x = F.leaky_relu(x)
+
+        #x = self.fc10(x)
+        #x = F.leaky_relu(x)
+
+        #x = self.fc11(x)
+        #x = F.leaky_relu(x)
+
+        #x = self.fc12(x)
+        #x = F.leaky_relu(x)
+
+        #x = self.fc13(x)
+        #x = F.leaky_relu(x)
+
+        #x = self.fc14(x)
+        #x = F.leaky_relu(x)
+
+        #x = self.fc15(x)
+        #x = F.leaky_relu(x)
+
+        #x = self.fc16(x)
+        #x = F.leaky_relu(x)
+
+        x = self.fcn_2(x)
         x = F.leaky_relu(x)
 
-        x = self.fc8(x)
+        x = self.fcn_1(x)
         x = F.leaky_relu(x)
 
-        x = self.fc9(x)
-        x = F.leaky_relu(x)
-
-        x = self.fc10(x)
-        x = F.leaky_relu(x)
+        x = self.fcn(x)
+        #x = F.leaky_relu(x)
 
         #output = F.log_softmax(x, dim=1)
         output = F.softmax(x, dim=1)
@@ -153,7 +191,7 @@ class my_net(nn.Module):
 if __name__ == '__main__':
     root = "./"
     batch = 2
-    epochs = 25
+    epochs = 3
 
 
     model = my_net()
@@ -168,7 +206,8 @@ if __name__ == '__main__':
     epsilon = 1e-8
 
     loss = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, eps=epsilon)
+    #optimizer = torch.optim.Adam(model.parameters(), lr=learn_rate, eps=epsilon)
+    optimizer = torch.optim.SGD(model.parameters(), lr=learn_rate, momentum=0.9)
 
     decayRate = 0.8
     scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=decayRate)
@@ -189,31 +228,78 @@ if __name__ == '__main__':
 
             total = 0
             correct = 0
+            loss1 = None
+           
+            loss_array = []
 
             for batch_index, batch_samples in enumerate(train_loader):
                 targets, inputs = batch_samples['target'], batch_samples['input']
                 targets = targets.to(device)
                 inputs = inputs.to(device)
 
-                #print(inputs.shape)
-
                 outputs = model(inputs)
 
                 _, predicted = torch.max(outputs.data, 1)
-
 
                 total += targets.size(0)
                 correct += (predicted == targets).sum().item()
 
                 loss1 = loss(outputs, targets)
+                loss_array.append(loss1.item())
 
                 model.zero_grad()
                 loss1.backward()
                 optimizer.step()
 
+            print("Loss: ", sum(loss_array)/len(loss_array))
+            print('Training accuracy of the network epoch %d is %f %%' % (k, (100 * float(correct) / float(total))))
 
+            scheduler.step()
 
-            print('Accuracy of the network epoch %d is %f %%' % (k, (100 * float(correct) / float(total))))
+            total = 0
+            correct = 0
+            loss_array1 = []
 
-            #scheduler.step()
+            for batch_index, batch_samples in enumerate(val_loader):
+                targets, inputs = batch_samples['target'], batch_samples['input']
+                targets = targets.to(device)
+                inputs = inputs.to(device)
+                #print(inputs.shape)
+                outputs = model(inputs)
+                _, predicted = torch.max(outputs.data, 1)
+                total += targets.size(0)
+                correct += (predicted == targets).sum().item()
+                loss1 = loss(outputs, targets)
+                loss_array1.append(loss1.item())
+            print("Loss: ", sum(loss_array1)/len(loss_array1))
+            print('Validation accuracy of the network epoch %d is %f %%' % (k, (100 * float(correct) / float(total))))
+
+        print("train end")
+
+        print("Saving model parameters")
+        torch.save(model.state_dict(), model_file)
+
+    else:
+        print("Loading saved model parameters")
+        model.load_state_dict(torch.load(model_file))
+
+    total = 0
+    correct = 0
+    loss1 = None
+    loss_array = []
+
+    for batch_index, batch_samples in enumerate(test_loader):
+        targets, inputs = batch_samples['target'], batch_samples['input']
+        targets = targets.to(device)
+        inputs = inputs.to(device)
+        #print(inputs.shape)
+        outputs = model(inputs)
+        _, predicted = torch.max(outputs.data, 1)
+        total += targets.size(0)
+        correct += (predicted == targets).sum().item()
+        loss1 = loss(outputs, targets)
+        loss_array.append(loss1.item())
+    print("Loss: ", sum(loss_array)/len(loss_array))
+    print('Tes accuracy of the network epoch %d is %f %%' % (k, (100 * float(correct) / float(total))))
+
 
